@@ -1,5 +1,3 @@
-
-cat > /mnt/user-data/outputs/App.js << 'APPEOF'
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import Login from './Login';
@@ -103,11 +101,11 @@ export default function App() {
     return <AdminDashboard onLogout={() => setIsAdmin(false)} />;
   }
 
-  // ── ORDER TRACKING PAGE ──
+  // ── ORDER TRACKING PAGE (hardcoded orderId) ──
   if (showTracking) {
     return (
       <OrderTracking
-        orderId={currentOrderId}
+        orderId="PV10234"
         onBack={() => setShowTracking(false)}
       />
     );
@@ -448,4 +446,3 @@ export default function App() {
     </div>
   );
 }
-
