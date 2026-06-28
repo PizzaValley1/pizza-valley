@@ -1,0 +1,104 @@
+const express   = require('express');
+const bcrypt    = require('bcryptjs');
+const jwt       = require('jsonwebtoken');
+const { body, validationResult } = require('express-validator');
+const router    = express.Router();
+
+// Temporary in-memory users (will be replaced with Supabase in Phase 5)
+const users = [];
+
+// ── REGISTER ──
+router.post('/register', [
+  body('name').trim().notEmpty().withMessage('Name is required'),
+  body('email').isEmail().withMessage('Valid email required'),
+  body('phone').notEmpty().withMessage('Phone is required'),
+  body('password').isLength({ min: 6 }).withMessage('Password min 6 characters'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+  try {
+    const { name, email, phone, password } = req.body;
+
+    // Check if user exists
+    const exists = users.find(u => u.email === email);
+    if (exists) return res.status(400).json({ error: 'Email already registered' });
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Create user
+    const user = {
+      id       : Date.now().toString(),
+      name,
+      email,
+      phone,
+      password : hashedPassword,
+      role     : 'customer', // default role
+      createdAt: new Date()
+    };
+    users.push(user);
+
+    // Generate token
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.status(201).json({
+      message : 'Account created successfully',
+      token,
+      user    : { id: user.id, name: user.name, email: user.email, role: user.role }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── LOGIN ──
+router.post('/login', [
+  body('email').isEmail().withMessage('Valid email required'),
+  body('password').notEmpty().withMessage('Password required'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+  try {
+    const { email, password } = req.body;
+
+    // Find user
+    const user = users.find(u => u.email === email);
+    if (!user) return res.status(400).json({ error: 'Invalid email or password' });
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ error: 'Invalid email or password' });
+
+    // Generate token
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      message : 'Login successful',
+      token,
+      user    : { id: user.id, name: user.name, email: user.email, role: user.role }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── GET PROFILE ──
+const authMiddleware = require('../middleware/auth');
+router.get('/profile', authMiddleware, (req, res) => {
+  const user = users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const { password, ...safeUser } = user;
+  res.json(safeUser);
+});
+
+module.exports = router;
