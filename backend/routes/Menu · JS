@@ -1,70 +1,49 @@
-const express = require('express');
-const auth    = require('../middleware/auth');
-const role    = require('../middleware/role');
-const router  = express.Router();
-
-// Menu items data
-let menuItems = [
-  { id:1, name:'Margherita Classic',  category:'Classic', price:850,  badge:'Bestseller', available:true,
-    img:'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=500&q=85',
-    desc:'San Marzano tomatoes, fresh mozzarella, basil oil' },
-  { id:2, name:'BBQ Smoky Chicken',   category:'Chicken', price:1100, badge:'Hot',         available:true,
-    img:'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=85',
-    desc:'Smoked chicken, caramelized onions, BBQ drizzle' },
-  { id:3, name:'Pepperoni Feast',     category:'Beef',    price:1250, badge:'Popular',     available:true,
-    img:'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=500&q=85',
-    desc:'Double pepperoni, cheese burst crust, oregano' },
-  { id:4, name:'Veggie Supreme',      category:'Veggie',  price:950,  badge:'',            available:true,
-    img:'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=500&q=85',
-    desc:'Bell peppers, mushrooms, olives, sun-dried tomato' },
-  { id:5, name:'Spicy Tikka',         category:'Chicken', price:1150, badge:'Spicy',       available:true,
-    img:'https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=500&q=85',
-    desc:'Tikka chicken, green chilli, mint chutney base' },
-  { id:6, name:'Cheese Overload',     category:'Classic', price:1300, badge:'New',         available:true,
-    img:'https://images.unsplash.com/photo-1571407970349-bc81e7e96d47?w=500&q=85',
-    desc:'Four cheese blend, truffle oil, crispy garlic' },
-  { id:7, name:'Buffalo Ranch',       category:'Chicken', price:1200, badge:'',            available:true,
-    img:'https://images.unsplash.com/photo-1548369937-47519962c11a?w=500&q=85',
-    desc:'Buffalo sauce, ranch drizzle, crispy chicken strips' },
-  { id:8, name:'Beef Zinger',         category:'Beef',    price:1350, badge:'Hot',         available:true,
-    img:'https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?w=500&q=85',
-    desc:'Zinger beef, jalapeños, chipotle mayo, cheddar' },
-];
+const express  = require('express');
+const auth     = require('../middleware/auth');
+const role     = require('../middleware/role');
+const supabase = require('../config/supabase');
+const router   = express.Router();
 
 // ── GET ALL MENU ITEMS (public) ──
-router.get('/', (req, res) => {
-  const { category } = req.query;
-  const items = category
-    ? menuItems.filter(i => i.category === category && i.available)
-    : menuItems.filter(i => i.available);
-  res.json({ success: true, data: items });
+router.get('/', async (req, res) => {
+  try {
+    let query = supabase.from('menu').select('*').eq('available', true);
+    if (req.query.category) query = query.eq('category', req.query.category);
+    const { data, error } = await query;
+    if (error) throw error;
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch menu' });
+  }
 });
 
 // ── GET SINGLE ITEM (public) ──
-router.get('/:id', (req, res) => {
-  const item = menuItems.find(i => i.id === parseInt(req.params.id));
-  if (!item) return res.status(404).json({ error: 'Item not found' });
-  res.json({ success: true, data: item });
+router.get('/:id', async (req, res) => {
+  const { data, error } = await supabase
+    .from('menu').select('*').eq('id', req.params.id).single();
+  if (error) return res.status(404).json({ error: 'Item not found' });
+  res.json({ success: true, data });
 });
 
 // ── ADD MENU ITEM (admin only) ──
-router.post('/', auth, role('admin', 'super_admin'), (req, res) => {
-  const newItem = { ...req.body, id: Date.now(), available: true };
-  menuItems.push(newItem);
-  res.status(201).json({ success: true, data: newItem });
+router.post('/', auth, role('admin', 'super_admin'), async (req, res) => {
+  const { data, error } = await supabase.from('menu').insert([req.body]).select().single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.status(201).json({ success: true, data });
 });
 
 // ── UPDATE MENU ITEM (admin only) ──
-router.put('/:id', auth, role('admin', 'super_admin'), (req, res) => {
-  const index = menuItems.findIndex(i => i.id === parseInt(req.params.id));
-  if (index === -1) return res.status(404).json({ error: 'Item not found' });
-  menuItems[index] = { ...menuItems[index], ...req.body };
-  res.json({ success: true, data: menuItems[index] });
+router.put('/:id', auth, role('admin', 'super_admin'), async (req, res) => {
+  const { data, error } = await supabase
+    .from('menu').update(req.body).eq('id', req.params.id).select().single();
+  if (error) return res.status(400).json({ error: error.message });
+  res.json({ success: true, data });
 });
 
 // ── DELETE MENU ITEM (admin only) ──
-router.delete('/:id', auth, role('admin', 'super_admin'), (req, res) => {
-  menuItems = menuItems.filter(i => i.id !== parseInt(req.params.id));
+router.delete('/:id', auth, role('admin', 'super_admin'), async (req, res) => {
+  const { error } = await supabase.from('menu').delete().eq('id', req.params.id);
+  if (error) return res.status(400).json({ error: error.message });
   res.json({ success: true, message: 'Item deleted' });
 });
 
