@@ -20,7 +20,6 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
 
   return (
     <div className="co-page">
-
       {/* HEADER */}
       <div className="co-header">
         <button className="co-back" onClick={onBack}>← Back to Menu</button>
@@ -39,7 +38,6 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
       </div>
 
       <div className="co-body">
-
         {/* STEP 0 — CART REVIEW */}
         {step === 0 && (
           <div className="co-section">
