@@ -1,25 +1,26 @@
 import React, { useState } from 'react';
 import './Checkout.css';
+import Payment from './Payment';
 
 const STEPS = ['Cart Review', 'Delivery Info', 'Payment', 'Confirmation'];
 
-export default function Checkout({ cart, total, onBack, updateQty, removeFromCart }) {
-  const [step, setStep] = useState(0);
-  const [payMethod, setPayMethod] = useState('cod');
-  const [form, setForm] = useState({ name:'', phone:'', address:'', city:'Rawalpindi', notes:'' });
-  const [, setOrdered] = useState(false);
+export default function Checkout({ cart, total, onBack, updateQty, removeFromCart, onOrderPlaced }) {
+  const [step, setStep]         = useState(0);
+  const [form, setForm]         = useState({ name:'', phone:'', address:'', city:'Rawalpindi', notes:'', type:'delivery' });
+  const [orderId]               = useState('PV' + Math.floor(Math.random()*90000+10000));
 
-  const handle = e => setForm({ ...form, [e.target.name]: e.target.value });
-  const delivery = 150;
-  const grandTotal = total + delivery;
+  const handle  = e => setForm({ ...form, [e.target.name]: e.target.value });
+  const delivery    = 150;
+  const grandTotal  = total + delivery;
 
-  const placeOrder = () => {
-    setOrdered(true);
-    setStep(3);
+  const handleOrderPlaced = () => {
+    if (onOrderPlaced) onOrderPlaced(orderId);
+    else setStep(3);
   };
 
   return (
     <div className="co-page">
+
       {/* HEADER */}
       <div className="co-header">
         <button className="co-back" onClick={onBack}>← Back to Menu</button>
@@ -38,6 +39,7 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
       </div>
 
       <div className="co-body">
+
         {/* STEP 0 — CART REVIEW */}
         {step === 0 && (
           <div className="co-section">
@@ -83,15 +85,15 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
             <div className="co-form">
               <div className="co-field">
                 <label>Full Name</label>
-                <input name="name" value={form.name} onChange={handle} placeholder="Your full name" required />
+                <input name="name" value={form.name} onChange={handle} placeholder="Your full name" />
               </div>
               <div className="co-field">
                 <label>Phone Number</label>
-                <input name="phone" value={form.phone} onChange={handle} placeholder="03XX-XXXXXXX" required />
+                <input name="phone" value={form.phone} onChange={handle} placeholder="03XX-XXXXXXX" />
               </div>
               <div className="co-field">
                 <label>Delivery Address</label>
-                <input name="address" value={form.address} onChange={handle} placeholder="Street, Area, Landmark" required />
+                <input name="address" value={form.address} onChange={handle} placeholder="Street, Area, Landmark" />
               </div>
               <div className="co-field">
                 <label>City</label>
@@ -104,7 +106,7 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
               <div className="co-field">
                 <label>Order Notes (optional)</label>
                 <textarea name="notes" value={form.notes} onChange={handle}
-                  placeholder="Extra cheese, no onions, ring the bell..." rows={3} />
+                  placeholder="Extra cheese, no onions..." rows={3} />
               </div>
               <div className="co-type-row">
                 <button className={`co-type-btn ${form.type !== 'pickup' ? 'active' : ''}`}
@@ -125,61 +127,11 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
 
         {/* STEP 2 — PAYMENT */}
         {step === 2 && (
-          <div className="co-section">
-            <h2>Choose Payment Method</h2>
-            <div className="co-pay-options">
-              {[
-                { id:'cod', icon:'💵', label:'Cash on Delivery', sub:'Pay when your order arrives' },
-                { id:'jazzcash', icon:'📱', label:'JazzCash', sub:'Pay via JazzCash mobile wallet' },
-                { id:'easypaisa', icon:'📲', label:'Easypaisa', sub:'Pay via Easypaisa mobile wallet' },
-                { id:'card', icon:'💳', label:'Credit / Debit Card', sub:'Visa, Mastercard, secure payment' },
-              ].map(p => (
-                <div key={p.id} className={`co-pay-card ${payMethod === p.id ? 'active' : ''}`}
-                  onClick={() => setPayMethod(p.id)}>
-                  <div className="co-pay-radio">{payMethod === p.id ? '●' : '○'}</div>
-                  <div className="co-pay-icon">{p.icon}</div>
-                  <div>
-                    <strong>{p.label}</strong>
-                    <span>{p.sub}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {payMethod === 'jazzcash' && (
-              <div className="co-pay-detail">
-                <p>Send Rs. {grandTotal.toLocaleString()} to <strong>0300-1234567</strong></p>
-                <input placeholder="Enter JazzCash Transaction ID" />
-              </div>
-            )}
-            {payMethod === 'easypaisa' && (
-              <div className="co-pay-detail">
-                <p>Send Rs. {grandTotal.toLocaleString()} to <strong>0311-1234567</strong></p>
-                <input placeholder="Enter Easypaisa Transaction ID" />
-              </div>
-            )}
-            {payMethod === 'card' && (
-              <div className="co-pay-detail">
-                <input placeholder="Card Number" />
-                <div className="co-card-row">
-                  <input placeholder="MM/YY" />
-                  <input placeholder="CVV" />
-                </div>
-                <input placeholder="Cardholder Name" />
-              </div>
-            )}
-
-            <div className="co-order-summary">
-              <div className="co-summary-row"><span>Items ({cart.length})</span><span>Rs. {total.toLocaleString()}</span></div>
-              <div className="co-summary-row"><span>Delivery</span><span>Rs. {delivery}</span></div>
-              <div className="co-summary-row total"><span>Grand Total</span><strong>Rs. {grandTotal.toLocaleString()}</strong></div>
-            </div>
-
-            <div className="co-nav-btns">
-              <button className="co-btn-outline" onClick={() => setStep(1)}>← Back</button>
-              <button className="co-btn" onClick={placeOrder}>Place Order 🍕</button>
-            </div>
-          </div>
+          <Payment
+            total={total}
+            onBack={() => setStep(1)}
+            onPaid={handleOrderPlaced}
+          />
         )}
 
         {/* STEP 3 — CONFIRMATION */}
@@ -188,7 +140,7 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
             <div className="co-confirm-icon">🎉</div>
             <h2>Order Placed Successfully!</h2>
             <p>Your order has been received and is being prepared.</p>
-            <div className="co-order-id">Order #PV{Math.floor(Math.random()*90000+10000)}</div>
+            <div className="co-order-id">Order #{orderId}</div>
             <div className="co-tracking">
               <div className="co-track-step done">✓ Order Received</div>
               <div className="co-track-step active">🔥 Preparing your pizza</div>
@@ -199,6 +151,7 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
             <button className="co-btn" onClick={onBack}>Back to Menu</button>
           </div>
         )}
+
       </div>
     </div>
   );
