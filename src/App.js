@@ -6,11 +6,17 @@ import Checkout from './Checkout';
 import AdminDashboard from './AdminDashboard';
 import OrderTracking from './OrderTracking';
 
-// ── 🔥 COMPANY BRANDING ──
+// ── 🔥 BRANDING CONFIGURATION ──
 const BRAND = {
-  name: 'SoftDigiCodix Solution',
-  shortName: 'SDC',
+  // 🍕 RESTAURANT BRAND (Shown to customers)
+  name: 'Pizza Valley',
+  tagline: 'Authentic Pizza Crafted with Passion',
+  
+  // 🛠️ DEVELOPER CREDIT (Hidden in footer/credit)
+  developer: 'SoftDigiCodix Solution',
   founder: 'Ali Awan',
+  
+  // 📞 CONTACT DETAILS (Restaurant)
   phone: '0321-2627755',
   whatsapp: '03212627755',
   email: 'awan23893@gmail.com',
@@ -18,7 +24,8 @@ const BRAND = {
   locations: 'Rawalpindi & Islamabad',
   hours: '11:00 AM – 11:00 PM',
   year: '2024',
-  tagline: 'Digital Solutions, Delivered Fresh',
+  
+  // 🌐 SOCIAL MEDIA (Restaurant / Developer)
   social: {
     facebook: 'https://facebook.com/softdigicodix',
     instagram: 'https://instagram.com/softdigicodix',
@@ -80,8 +87,8 @@ export default function App() {
   const [page, setPage]           = useState('home');
   
   // ── 🔐 AUTH STATE ──
-  const [user, setUser]           = useState(null); // Stores logged-in user data
-  const [isAdmin, setIsAdmin]     = useState(false); // Toggles admin view
+  const [user, setUser]           = useState(null);
+  const [isAdmin, setIsAdmin]     = useState(false);
 
   const [showTracking, setShowTracking] = useState(false);
   const [, setCurrentOrderId] = useState('');
@@ -126,7 +133,6 @@ export default function App() {
   const handleLogin = (userData) => {
     setUser(userData);
     setAuthPage(null);
-    // Check if user has admin role
     if (userData?.role === 'admin' || userData?.role === 'super_admin') {
       setIsAdmin(true);
     }
@@ -138,9 +144,10 @@ export default function App() {
     setIsAdmin(false);
     setCart([]);
     setPage('home');
+    localStorage.removeItem('pv_current_user');
   };
 
-  // ── ADMIN PAGE (ONLY IF USER IS ADMIN) ──
+  // ── ADMIN PAGE (SECURED) ──
   if (isAdmin && user && (user.role === 'admin' || user.role === 'super_admin')) {
     return <AdminDashboard onLogout={handleLogout} />;
   }
@@ -202,15 +209,14 @@ export default function App() {
       <nav className="pv-nav">
         <div className="pv-nav-inner">
           <div className="pv-logo" onClick={() => scrollTo('home')}>
-            {/* ── SVG LOGO ── */}
+            {/* ── PIZZA LOGO ── */}
             <svg width="40" height="40" viewBox="0 0 40 40" fill="none" style={{marginRight:'10px'}}>
               <circle cx="20" cy="20" r="18" fill="#ff6b35" stroke="#fff" strokeWidth="2"/>
-              <text x="10" y="26" fontFamily="Arial" fontSize="18" fontWeight="bold" fill="#fff">SD</text>
+              <text x="7" y="26" fontFamily="Arial" fontSize="16" fontWeight="bold" fill="#fff">🍕</text>
               <circle cx="20" cy="20" r="22" stroke="#ff6b35" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.5"/>
             </svg>
-            <span style={{color:'#ff6b35'}}>Soft</span>
-            <span style={{color:'#fff'}}>Digi</span>
-            <span style={{color:'#ff6b35'}}>Codix</span>
+            <span style={{color:'#fff'}}>Pizza</span>
+            <span style={{color:'#ff6b35'}}>Valley</span>
           </div>
 
           <ul className={`pv-nav-links ${menuOpen ? 'open' : ''}`}>
@@ -237,7 +243,6 @@ export default function App() {
                 <span style={{color:'#fff',fontSize:'13px',marginRight:'8px'}}>
                   👋 {user.name}
                 </span>
-                {/* ── ADMIN BUTTON (SHOWN ONLY IF USER IS ADMIN) ── */}
                 {(user.role === 'admin' || user.role === 'super_admin') && (
                   <button
                     onClick={() => setIsAdmin(true)}
@@ -269,13 +274,13 @@ export default function App() {
         </div>
       </nav>
 
-      {/* ── HERO ── */}
+      {/* ── HERO (PIZZA BRAND SHOWN HERE) ── */}
       <section className="pv-hero" id="home">
         <div className="pv-hero-content">
           <div className="pv-hero-badge">🍕 Fresh & Hot — Delivered in 30 mins</div>
           <h1>Welcome to <br /><span style={{color:'#ff6b35'}}>{BRAND.name}</span></h1>
           <p style={{fontSize:'18px',color:'#ccc'}}>
-            {BRAND.tagline} — Authentic stone-fired pizzas made from scratch, 
+            {BRAND.tagline} — Stone-fired pizzas made from scratch, 
             delivered hot to your door anywhere in {BRAND.locations}.
           </p>
           <div className="pv-hero-btns">
@@ -289,13 +294,13 @@ export default function App() {
             <div className="pv-stat-divider" />
             <div className="pv-stat"><strong>30 min</strong><span>Avg Delivery</span></div>
           </div>
-          {/* ── DEVELOPER CREDIT ── */}
+          {/* ── DEVELOPER CREDIT (SoftDigiCodix + Ali Awan) ── */}
           <div style={{marginTop:'20px',padding:'12px 20px',background:'rgba(255,107,53,0.15)',
             borderRadius:'30px',border:'1px solid rgba(255,107,53,0.3)',display:'inline-block'}}>
             <span style={{color:'#ccc',fontSize:'13px'}}>
-              Developed with ❤️ by <strong style={{color:'#ff6b35'}}>{BRAND.founder}</strong>
+              Developed with ❤️ by <strong style={{color:'#ff6b35'}}>{BRAND.developer}</strong>
               <span style={{color:'#666',margin:'0 8px'}}>|</span>
-              <span style={{color:'#888',fontSize:'12px'}}>{BRAND.email}</span>
+              <span style={{color:'#888',fontSize:'12px'}}>Founder: {BRAND.founder}</span>
             </span>
           </div>
         </div>
@@ -451,17 +456,16 @@ export default function App() {
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
+      {/* ── FOOTER (PIZZA BRAND + DEVELOPER CREDIT) ── */}
       <footer className="pv-footer">
         <div className="pv-footer-top">
           <div className="pv-footer-brand">
             <div className="pv-logo" style={{marginBottom:12}}>
-              <span style={{color:'#ff6b35'}}>Soft</span>
-              <span style={{color:'#fff'}}>Digi</span>
-              <span style={{color:'#ff6b35'}}>Codix</span>
+              🍕 <span style={{color:'#fff'}}>Pizza</span>
+              <span style={{color:'#ff6b35'}}>Valley</span>
             </div>
             <p style={{color:'#999',fontSize:'14px',maxWidth:'300px'}}>
-              {BRAND.tagline} — Authentic stone-fired pizzas delivered fresh 
+              {BRAND.tagline} — Stone-fired pizzas delivered fresh 
               to your door across {BRAND.address} since {BRAND.year}.
             </p>
             <div className="pv-social">
@@ -489,7 +493,8 @@ export default function App() {
         <div className="pv-footer-bottom">
           <p style={{fontSize:'13px',color:'#666'}}>
             © {BRAND.year} {BRAND.name}. All rights reserved. 
-            Developed with ❤️ by <strong style={{color:'#ff6b35'}}>{BRAND.founder}</strong>
+            Developed by <strong style={{color:'#ff6b35'}}>{BRAND.developer}</strong> — 
+            Founder: <strong style={{color:'#ff6b35'}}>{BRAND.founder}</strong>
           </p>
           <p style={{fontSize:'12px',color:'#555',marginTop:'6px'}}>
             📧 {BRAND.email} | 📞 {BRAND.phone} | 💬 {BRAND.whatsapp}
