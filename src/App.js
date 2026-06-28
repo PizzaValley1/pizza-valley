@@ -58,7 +58,7 @@ export default function App() {
   const [page, setPage]           = useState('home');
   const [isAdmin, setIsAdmin]     = useState(false);
   const [showTracking, setShowTracking] = useState(false);
-  const [currentOrderId, setCurrentOrderId] = useState('');
+  const [, setCurrentOrderId] = useState('');
 
   const filtered  = activeCategory === 'All' ? menuItems : menuItems.filter(i => i.category === activeCategory);
   const cartCount = cart.reduce((a, b) => a + b.qty, 0);
