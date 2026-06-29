@@ -1,29 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './AdminDashboard.css';
 
-const stats = [
-  { icon: '📦', label: 'Total Orders', value: '1,284', change: '+12% today' },
-  { icon: '💰', label: 'Revenue Today', value: 'Rs. 48,500', change: '+8% vs yesterday' },
-  { icon: '👥', label: 'Total Customers', value: '3,492', change: '+5 new today' },
-  { icon: '🍕', label: 'Menu Items', value: '24', change: '3 out of stock' },
-];
+// ── SUPABASE CONFIG ──
+const SUPABASE_URL = 'https://rhrsebtzwqjvjdrtvuhl.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJocnNlYnR6d3FqdmpkcnR2dWhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTI3MzEsImV4cCI6MjA5ODA2ODczMX0.Nay0yADjjFzzQ2qH90xa6EHPwRuNFosJTLTgniVF5g8';
 
-const recentOrders = [
-  { id: 'PV10234', customer: 'Ahmed Raza',  items: 'BBQ Chicken x2',        total: 2200, status: 'delivered',  time: '2 min ago' },
-  { id: 'PV10233', customer: 'Sara Khan',   items: 'Family Feast Deal',      total: 2999, status: 'on_the_way', time: '8 min ago' },
-  { id: 'PV10232', customer: 'Usman Ali',   items: 'Pepperoni Feast x1',     total: 1250, status: 'preparing',  time: '15 min ago' },
-  { id: 'PV10231', customer: 'Fatima Noor', items: 'Veggie Supreme x2',      total: 1900, status: 'placed',     time: '22 min ago' },
-  { id: 'PV10230', customer: 'Ali Hassan',  items: 'Spicy Tikka + Solo Deal', total: 2049, status: 'delivered', time: '35 min ago' },
-];
-
-const stockItems = [
-  { name: 'Mozzarella Cheese', qty: 45, unit: 'kg',  alert: 10, status: 'ok' },
-  { name: 'Pizza Dough',       qty: 8,  unit: 'kg',  alert: 10, status: 'low' },
-  { name: 'Tomato Sauce',      qty: 32, unit: 'ltr', alert: 5,  status: 'ok' },
-  { name: 'Pepperoni',         qty: 3,  unit: 'kg',  alert: 5,  status: 'critical' },
-  { name: 'Bell Peppers',      qty: 15, unit: 'kg',  alert: 5,  status: 'ok' },
-  { name: 'Chicken',           qty: 7,  unit: 'kg',  alert: 8,  status: 'low' },
-];
+const sb = async (table, options = {}) => {
+  const { method='GET', body, select='*', filter='' } = options;
+  const url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}${filter}`;
+  const res = await fetch(url, {
+    method,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : '',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
 
 const STATUS_COLORS = {
   placed     : '#3b82f6',
@@ -41,24 +38,160 @@ const STATUS_LABELS = {
   cancelled  : '🔴 Cancelled',
 };
 
-export default function AdminDashboard({ onLogout }) {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [orders, setOrders] = useState(recentOrders);
+const ROLES = {
+  super_admin    : { label:'Super Admin',    color:'#ef4444', icon:'👑' },
+  branch_manager : { label:'Branch Manager', color:'#f59e0b', icon:'🏪' },
+  kitchen        : { label:'Kitchen Staff',  color:'#3b82f6', icon:'👨‍🍳' },
+  rider          : { label:'Delivery Rider', color:'#10b981', icon:'🛵' },
+  customer       : { label:'Customer',       color:'#888',    icon:'👤' },
+};
 
-  const updateStatus = (id, status) => {
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+// ── LOGIN SCREEN ──
+function AdminLogin({ onLogin }) {
+  const [form, setForm]     = useState({ email:'', password:'' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError]   = useState('');
+
+  const login = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const data = await sb('admin_accounts', {
+        filter: `&email=eq.${form.email}&active=eq.true`
+      });
+      if (!data.length) { setError('Account not found'); setLoading(false); return; }
+      const account = data[0];
+      if (account.password !== form.password) { setError('Wrong password'); setLoading(false); return; }
+      onLogin(account);
+    } catch (err) {
+      setError('Connection error. Check Supabase.');
+    }
+    setLoading(false);
   };
 
-  const navItems = [
-    { id: 'dashboard', icon: '📊', label: 'Dashboard' },
-    { id: 'orders',    icon: '📦', label: 'Orders' },
-    { id: 'menu',      icon: '🍕', label: 'Menu Management' },
-    { id: 'stock',     icon: '📋', label: 'Stock' },
-    { id: 'customers', icon: '👥', label: 'Customers' },
-    { id: 'reports',   icon: '📈', label: 'Reports' },
-    { id: 'settings',  icon: '⚙️', label: 'Settings' },
+  return (
+    <div style={{minHeight:'100vh',background:'#0d0d0d',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Poppins,sans-serif'}}>
+      <div style={{background:'#1a1a1a',border:'1px solid rgba(255,255,255,0.08)',borderRadius:24,padding:40,width:'100%',maxWidth:400}}>
+        <div style={{fontSize:22,fontWeight:700,color:'#ff6b35',marginBottom:8}}>🍕 Pizza Valley</div>
+        <div style={{fontSize:24,fontWeight:700,color:'#fff',marginBottom:4}}>Admin Login</div>
+        <div style={{fontSize:13,color:'#888',marginBottom:24}}>Enter your role credentials</div>
+
+        {error && <div style={{background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',color:'#ef4444',padding:'10px 16px',borderRadius:10,fontSize:13,marginBottom:16}}>⚠️ {error}</div>}
+
+        <form onSubmit={login}>
+          {[
+            { name:'email',    label:'Email',    type:'email',    ph:'role@pizzavalley.pk' },
+            { name:'password', label:'Password', type:'password', ph:'••••••••' },
+          ].map(f => (
+            <div key={f.name} style={{marginBottom:16}}>
+              <label style={{display:'block',fontSize:13,color:'#aaa',marginBottom:6}}>{f.label}</label>
+              <input type={f.type} placeholder={f.ph}
+                value={form[f.name]} onChange={e => setForm({...form,[f.name]:e.target.value})}
+                required
+                style={{width:'100%',background:'#242424',border:'1px solid rgba(255,255,255,0.08)',
+                borderRadius:12,padding:'13px 16px',fontSize:14,color:'#fff',outline:'none',
+                fontFamily:'Poppins,sans-serif',boxSizing:'border-box'}}
+              />
+            </div>
+          ))}
+          <button type="submit" disabled={loading}
+            style={{width:'100%',background:'#ff6b35',color:'#fff',border:'none',padding:14,
+            borderRadius:30,fontSize:16,fontWeight:600,cursor:'pointer',fontFamily:'Poppins,sans-serif'}}>
+            {loading ? 'Logging in...' : 'Login →'}
+          </button>
+        </form>
+
+        <div style={{marginTop:24,background:'#242424',borderRadius:12,padding:16}}>
+          <div style={{fontSize:12,color:'#888',marginBottom:8}}>Test accounts:</div>
+          {[
+            { role:'Super Admin',    email:'superadmin@pizzavalley.pk',  pass:'super2024' },
+            { role:'Branch Manager', email:'manager@pizzavalley.pk',     pass:'manager2024' },
+            { role:'Kitchen',        email:'kitchen@pizzavalley.pk',     pass:'kitchen2024' },
+            { role:'Rider',          email:'rider@pizzavalley.pk',       pass:'rider2024' },
+          ].map((a,i) => (
+            <div key={i} style={{fontSize:11,color:'#666',padding:'2px 0'}}>
+              <span style={{color:'#ff6b35'}}>{a.role}:</span> {a.email} / {a.pass}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN DASHBOARD ──
+export default function AdminDashboard({ onLogout }) {
+  const [account, setAccount]   = useState(null);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Live data states
+  const [orders, setOrders]     = useState([]);
+  const [menu, setMenu]         = useState([]);
+  const [stock, setStock]       = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading]   = useState(false);
+  const [stats, setStats]       = useState({ orders:0, revenue:0, customers:0, menu:0 });
+
+  // Load data from Supabase
+  const loadOrders   = async () => { try { const d = await sb('orders');          setOrders(d);   } catch(e){} };
+  const loadMenu     = async () => { try { const d = await sb('menu');             setMenu(d);     } catch(e){} };
+  const loadStock    = async () => { try { const d = await sb('stock');            setStock(d);    } catch(e){} };
+  const loadAccounts = async () => { try { const d = await sb('admin_accounts');   setAccounts(d); } catch(e){} };
+
+  useEffect(() => {
+    if (!account) return;
+    setLoading(true);
+    Promise.all([loadOrders(), loadMenu(), loadStock(), loadAccounts()])
+      .finally(() => setLoading(false));
+    // Auto refresh every 30 seconds
+    const interval = setInterval(loadOrders, 30000);
+    return () => clearInterval(interval);
+  }, [account]);
+
+  useEffect(() => {
+    const revenue = orders.filter(o => o.status === 'delivered').reduce((a,b) => a + (b.total||0), 0);
+    setStats({ orders: orders.length, revenue, customers: orders.length, menu: menu.length });
+  }, [orders, menu]);
+
+  const updateOrderStatus = async (id, status) => {
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+    } catch(e){}
+  };
+
+  const deleteMenuItem = async (id) => {
+    if (!window.confirm('Delete this item?')) return;
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/menu?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
+      });
+      setMenu(prev => prev.filter(m => m.id !== id));
+    } catch(e){}
+  };
+
+  if (!account) return <AdminLogin onLogin={a => { setAccount(a); setActiveTab('dashboard'); }} />;
+
+  const role = account.role;
+
+  // NAV ITEMS based on role
+  const allNavItems = [
+    { id:'dashboard', icon:'📊', label:'Dashboard',    roles:['super_admin','branch_manager'] },
+    { id:'orders',    icon:'📦', label:'Orders',       roles:['super_admin','branch_manager','kitchen','rider'] },
+    { id:'menu',      icon:'🍕', label:'Menu',         roles:['super_admin','branch_manager'] },
+    { id:'stock',     icon:'📋', label:'Stock',        roles:['super_admin','branch_manager'] },
+    { id:'accounts',  icon:'👥', label:'Accounts',     roles:['super_admin'] },
+    { id:'reports',   icon:'📈', label:'Reports',      roles:['super_admin','branch_manager'] },
   ];
+  const navItems = allNavItems.filter(n => n.roles.includes(role));
 
   return (
     <div className="ad-layout">
@@ -73,29 +206,27 @@ export default function AdminDashboard({ onLogout }) {
         </div>
 
         <div className="ad-admin-badge">
-          <div className="ad-avatar">A</div>
+          <div className="ad-avatar">{account.name[0]}</div>
           {sidebarOpen && (
             <div>
-              <strong>Super Admin</strong>
-              <span>admin@pizzavalley.pk</span>
+              <strong>{account.name}</strong>
+              <span style={{color: ROLES[role]?.color}}>{ROLES[role]?.icon} {ROLES[role]?.label}</span>
             </div>
           )}
         </div>
 
         <nav className="ad-nav">
           {navItems.map(item => (
-            <button
-              key={item.id}
+            <button key={item.id}
               className={`ad-nav-item ${activeTab === item.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(item.id)}
-            >
+              onClick={() => setActiveTab(item.id)}>
               <span className="ad-nav-icon">{item.icon}</span>
               {sidebarOpen && <span>{item.label}</span>}
             </button>
           ))}
         </nav>
 
-        <button className="ad-logout" onClick={onLogout}>
+        <button className="ad-logout" onClick={() => { setAccount(null); onLogout && onLogout(); }}>
           🚪 {sidebarOpen && 'Logout'}
         </button>
       </aside>
@@ -106,25 +237,28 @@ export default function AdminDashboard({ onLogout }) {
         {/* TOPBAR */}
         <div className="ad-topbar">
           <div>
-            <h1>{navItems.find(n => n.id === activeTab)?.label}</h1>
-            <span>Pizza Valley Admin Panel</span>
+            <h1>{navItems.find(n => n.id === activeTab)?.label || 'Dashboard'}</h1>
+            <span>{account.branch} — {ROLES[role]?.label}</span>
           </div>
           <div className="ad-topbar-right">
-            <div className="ad-search">
-              <input placeholder="Search orders, customers..." />
-            </div>
-            <button className="ad-notif">🔔 <span>3</span></button>
+            <div className="ad-search"><input placeholder="Search..." /></div>
+            <button className="ad-notif" onClick={loadOrders}>🔄 Refresh</button>
           </div>
         </div>
 
         <div className="ad-content">
+          {loading && <div style={{textAlign:'center',padding:20,color:'#888'}}>Loading live data...</div>}
 
-          {/* ── DASHBOARD TAB ── */}
+          {/* ── DASHBOARD ── */}
           {activeTab === 'dashboard' && (
             <div>
-              {/* STATS */}
               <div className="ad-stats-grid">
-                {stats.map((s, i) => (
+                {[
+                  { icon:'📦', label:'Total Orders',   value: stats.orders,                       change:'Live from database' },
+                  { icon:'💰', label:'Total Revenue',  value:`Rs. ${stats.revenue.toLocaleString()}`, change:'Delivered orders only' },
+                  { icon:'👥', label:'Total Customers',value: stats.customers,                    change:'Registered users' },
+                  { icon:'🍕', label:'Menu Items',     value: stats.menu,                         change:`${stock.filter(s=>s.quantity<=s.low_alert).length} low stock` },
+                ].map((s,i) => (
                   <div className="ad-stat-card" key={i}>
                     <div className="ad-stat-icon">{s.icon}</div>
                     <div>
@@ -139,112 +273,147 @@ export default function AdminDashboard({ onLogout }) {
               {/* RECENT ORDERS */}
               <div className="ad-section">
                 <div className="ad-section-header">
-                  <h2>Recent Orders</h2>
-                  <button className="ad-view-all" onClick={() => setActiveTab('orders')}>
-                    View All →
-                  </button>
+                  <h2>Recent Orders — Live</h2>
+                  <button className="ad-view-all" onClick={() => setActiveTab('orders')}>View All →</button>
                 </div>
+                {orders.length === 0 ? (
+                  <div style={{textAlign:'center',padding:40,color:'#888'}}>No orders yet. Orders will appear here live.</div>
+                ) : (
+                  <div className="ad-table-wrap">
+                    <table className="ad-table">
+                      <thead><tr>
+                        <th>Order ID</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th>
+                      </tr></thead>
+                      <tbody>
+                        {orders.slice(0,5).map(o => (
+                          <tr key={o.id}>
+                            <td><strong>{o.id}</strong></td>
+                            <td>Rs. {(o.total||0).toLocaleString()}</td>
+                            <td>{o.payment_method?.toUpperCase() || 'COD'}</td>
+                            <td>
+                              <span className="ad-status" style={{background:STATUS_COLORS[o.status]+'22',color:STATUS_COLORS[o.status]}}>
+                                {STATUS_LABELS[o.status] || o.status}
+                              </span>
+                            </td>
+                            <td>{new Date(o.created_at).toLocaleDateString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* STOCK ALERTS */}
+              {stock.filter(s => s.quantity <= s.low_alert).length > 0 && (
+                <div className="ad-section">
+                  <div className="ad-section-header">
+                    <h2>⚠️ Stock Alerts</h2>
+                    <button className="ad-view-all" onClick={() => setActiveTab('stock')}>Manage →</button>
+                  </div>
+                  <div className="ad-stock-alerts">
+                    {stock.filter(s => s.quantity <= s.low_alert).map((s,i) => (
+                      <div key={i} className={`ad-alert-card ${s.quantity === 0 ? 'critical' : 'low'}`}>
+                        <div className="ad-alert-icon">{s.quantity === 0 ? '🔴' : '🟡'}</div>
+                        <div>
+                          <strong>{s.ingredient}</strong>
+                          <span>{s.quantity} {s.unit} remaining</span>
+                        </div>
+                        <span className={`ad-alert-badge ${s.quantity === 0 ? 'critical' : 'low'}`}>
+                          {s.quantity === 0 ? 'OUT OF STOCK' : 'LOW'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── ORDERS ── */}
+          {activeTab === 'orders' && (
+            <div className="ad-section">
+              <div className="ad-section-header">
+                <h2>All Orders — Live</h2>
+                <button className="ad-btn-primary" onClick={loadOrders}>🔄 Refresh</button>
+              </div>
+              {orders.length === 0 ? (
+                <div style={{textAlign:'center',padding:40,color:'#888'}}>No orders in database yet.</div>
+              ) : (
                 <div className="ad-table-wrap">
                   <table className="ad-table">
-                    <thead>
-                      <tr>
-                        <th>Order ID</th>
-                        <th>Customer</th>
-                        <th>Items</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                        <th>Time</th>
-                      </tr>
-                    </thead>
+                    <thead><tr>
+                      <th>Order ID</th><th>Total</th><th>Payment</th><th>Status</th>
+                      {['super_admin','branch_manager','kitchen'].includes(role) && <th>Update</th>}
+                    </tr></thead>
                     <tbody>
-                      {orders.slice(0, 5).map(o => (
+                      {orders.map(o => (
                         <tr key={o.id}>
                           <td><strong>{o.id}</strong></td>
-                          <td>{o.customer}</td>
-                          <td>{o.items}</td>
-                          <td>Rs. {o.total.toLocaleString()}</td>
+                          <td>Rs. {(o.total||0).toLocaleString()}</td>
+                          <td>{o.payment_method?.toUpperCase() || 'COD'}</td>
                           <td>
-                            <span className="ad-status" style={{ background: STATUS_COLORS[o.status] + '22', color: STATUS_COLORS[o.status] }}>
-                              {STATUS_LABELS[o.status]}
+                            <span className="ad-status" style={{background:STATUS_COLORS[o.status]+'22',color:STATUS_COLORS[o.status]}}>
+                              {STATUS_LABELS[o.status] || o.status}
                             </span>
                           </td>
-                          <td>{o.time}</td>
+                          {['super_admin','branch_manager','kitchen'].includes(role) && (
+                            <td>
+                              <select className="ad-status-select" value={o.status}
+                                onChange={e => updateOrderStatus(o.id, e.target.value)}>
+                                <option value="placed">Placed</option>
+                                <option value="preparing">Preparing</option>
+                                <option value="on_the_way">On the Way</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="cancelled">Cancelled</option>
+                              </select>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              </div>
-
-              {/* STOCK ALERTS */}
-              <div className="ad-section">
-                <div className="ad-section-header">
-                  <h2>⚠️ Stock Alerts</h2>
-                  <button className="ad-view-all" onClick={() => setActiveTab('stock')}>Manage Stock →</button>
-                </div>
-                <div className="ad-stock-alerts">
-                  {stockItems.filter(s => s.status !== 'ok').map((s, i) => (
-                    <div className={`ad-alert-card ${s.status}`} key={i}>
-                      <div className="ad-alert-icon">{s.status === 'critical' ? '🔴' : '🟡'}</div>
-                      <div>
-                        <strong>{s.name}</strong>
-                        <span>{s.qty} {s.unit} remaining</span>
-                      </div>
-                      <span className={`ad-alert-badge ${s.status}`}>
-                        {s.status === 'critical' ? 'CRITICAL' : 'LOW'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              )}
             </div>
           )}
 
-          {/* ── ORDERS TAB ── */}
-          {activeTab === 'orders' && (
+          {/* ── MENU ── */}
+          {activeTab === 'menu' && (
             <div className="ad-section">
-              <div className="ad-filter-row">
-                {['All', 'Placed', 'Preparing', 'On the Way', 'Delivered'].map(f => (
-                  <button key={f} className="ad-filter-btn">{f}</button>
-                ))}
+              <div className="ad-section-header">
+                <h2>Menu Management — Live</h2>
+                <button className="ad-btn-primary" onClick={loadMenu}>🔄 Refresh</button>
               </div>
               <div className="ad-table-wrap">
                 <table className="ad-table">
-                  <thead>
-                    <tr>
-                      <th>Order ID</th>
-                      <th>Customer</th>
-                      <th>Items</th>
-                      <th>Total</th>
-                      <th>Status</th>
-                      <th>Update Status</th>
-                    </tr>
-                  </thead>
+                  <thead><tr>
+                    <th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Badge</th><th>Status</th>
+                    {role === 'super_admin' && <th>Action</th>}
+                  </tr></thead>
                   <tbody>
-                    {orders.map(o => (
-                      <tr key={o.id}>
-                        <td><strong>{o.id}</strong></td>
-                        <td>{o.customer}</td>
-                        <td>{o.items}</td>
-                        <td>Rs. {o.total.toLocaleString()}</td>
+                    {menu.map(item => (
+                      <tr key={item.id}>
+                        <td><img src={item.image_url} alt={item.name}
+                          style={{width:48,height:48,borderRadius:8,objectFit:'cover'}} /></td>
+                        <td><strong>{item.name}</strong></td>
+                        <td>{item.category}</td>
+                        <td>Rs. {(item.price||0).toLocaleString()}</td>
+                        <td>{item.badge || '—'}</td>
                         <td>
-                          <span className="ad-status" style={{ background: STATUS_COLORS[o.status] + '22', color: STATUS_COLORS[o.status] }}>
-                            {STATUS_LABELS[o.status]}
+                          <span style={{padding:'3px 10px',borderRadius:20,fontSize:12,
+                            background: item.available ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                            color: item.available ? '#10b981' : '#ef4444'}}>
+                            {item.available ? '✅ Available' : '❌ Unavailable'}
                           </span>
                         </td>
-                        <td>
-                          <select
-                            className="ad-status-select"
-                            value={o.status}
-                            onChange={e => updateStatus(o.id, e.target.value)}
-                          >
-                            <option value="placed">Placed</option>
-                            <option value="preparing">Preparing</option>
-                            <option value="on_the_way">On the Way</option>
-                            <option value="delivered">Delivered</option>
-                            <option value="cancelled">Cancelled</option>
-                          </select>
-                        </td>
+                        {role === 'super_admin' && (
+                          <td>
+                            <button className="ad-btn-sm" style={{marginRight:6}}>Edit</button>
+                            <button className="ad-btn-sm" style={{background:'rgba(239,68,68,0.15)',color:'#ef4444',borderColor:'rgba(239,68,68,0.3)'}}
+                              onClick={() => deleteMenuItem(item.id)}>Delete</button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -253,39 +422,71 @@ export default function AdminDashboard({ onLogout }) {
             </div>
           )}
 
-          {/* ── STOCK TAB ── */}
+          {/* ── STOCK ── */}
           {activeTab === 'stock' && (
             <div className="ad-section">
               <div className="ad-section-header">
-                <h2>Stock Management</h2>
-                <button className="ad-btn-primary">+ Add Stock Item</button>
+                <h2>Stock Management — Live</h2>
+                <button className="ad-btn-primary" onClick={loadStock}>🔄 Refresh</button>
               </div>
               <div className="ad-table-wrap">
                 <table className="ad-table">
-                  <thead>
-                    <tr>
-                      <th>Ingredient</th>
-                      <th>Quantity</th>
-                      <th>Unit</th>
-                      <th>Alert Level</th>
-                      <th>Status</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
+                  <thead><tr>
+                    <th>Ingredient</th><th>Quantity</th><th>Unit</th><th>Alert Level</th><th>Status</th>
+                  </tr></thead>
                   <tbody>
-                    {stockItems.map((s, i) => (
+                    {stock.map((s,i) => {
+                      const status = s.quantity === 0 ? 'critical' : s.quantity <= s.low_alert ? 'low' : 'ok';
+                      return (
+                        <tr key={i}>
+                          <td><strong>{s.ingredient}</strong></td>
+                          <td>{s.quantity}</td>
+                          <td>{s.unit}</td>
+                          <td>{s.low_alert} {s.unit}</td>
+                          <td>
+                            <span className={`ad-stock-status ${status}`}>
+                              {status==='ok' ? '✅ OK' : status==='low' ? '⚠️ Low' : '🔴 Out of Stock'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ── ACCOUNTS ── */}
+          {activeTab === 'accounts' && role === 'super_admin' && (
+            <div className="ad-section">
+              <div className="ad-section-header">
+                <h2>All Role Accounts</h2>
+                <button className="ad-btn-primary" onClick={loadAccounts}>🔄 Refresh</button>
+              </div>
+              <div className="ad-table-wrap">
+                <table className="ad-table">
+                  <thead><tr>
+                    <th>Name</th><th>Email</th><th>Role</th><th>Branch</th><th>Status</th>
+                  </tr></thead>
+                  <tbody>
+                    {accounts.map((a,i) => (
                       <tr key={i}>
-                        <td><strong>{s.name}</strong></td>
-                        <td>{s.qty}</td>
-                        <td>{s.unit}</td>
-                        <td>{s.alert} {s.unit}</td>
+                        <td><strong>{a.name}</strong></td>
+                        <td>{a.email}</td>
                         <td>
-                          <span className={`ad-stock-status ${s.status}`}>
-                            {s.status === 'ok' ? '✅ OK' : s.status === 'low' ? '⚠️ Low' : '🔴 Critical'}
+                          <span style={{padding:'3px 10px',borderRadius:20,fontSize:12,
+                            background: ROLES[a.role]?.color+'22', color: ROLES[a.role]?.color}}>
+                            {ROLES[a.role]?.icon} {ROLES[a.role]?.label}
                           </span>
                         </td>
+                        <td>{a.branch}</td>
                         <td>
-                          <button className="ad-btn-sm">Update</button>
+                          <span style={{padding:'3px 10px',borderRadius:20,fontSize:12,
+                            background: a.active ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                            color: a.active ? '#10b981' : '#ef4444'}}>
+                            {a.active ? '✅ Active' : '❌ Inactive'}
+                          </span>
                         </td>
                       </tr>
                     ))}
@@ -295,14 +496,27 @@ export default function AdminDashboard({ onLogout }) {
             </div>
           )}
 
-          {/* ── OTHER TABS ── */}
-          {['menu', 'customers', 'reports', 'settings'].includes(activeTab) && (
-            <div className="ad-coming-soon">
-              <div style={{ fontSize: 60 }}>
-                {activeTab === 'menu' ? '🍕' : activeTab === 'customers' ? '👥' : activeTab === 'reports' ? '📈' : '⚙️'}
+          {/* ── REPORTS ── */}
+          {activeTab === 'reports' && (
+            <div className="ad-section">
+              <div className="ad-section-header"><h2>Sales Reports</h2></div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:20,marginBottom:24}}>
+                {[
+                  { label:'Total Orders',    value: orders.length },
+                  { label:'Delivered',       value: orders.filter(o=>o.status==='delivered').length },
+                  { label:'Cancelled',       value: orders.filter(o=>o.status==='cancelled').length },
+                  { label:'Total Revenue',   value:`Rs. ${orders.filter(o=>o.status==='delivered').reduce((a,b)=>a+(b.total||0),0).toLocaleString()}` },
+                  { label:'Avg Order Value', value: orders.length ? `Rs. ${Math.round(orders.reduce((a,b)=>a+(b.total||0),0)/orders.length).toLocaleString()}` : 'Rs. 0' },
+                  { label:'Menu Items',      value: menu.length },
+                ].map((r,i) => (
+                  <div key={i} className="ad-stat-card">
+                    <div>
+                      <div className="ad-stat-value">{r.value}</div>
+                      <div className="ad-stat-label">{r.label}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <h2>{navItems.find(n => n.id === activeTab)?.label}</h2>
-              <p>This section is being built in the next phase.</p>
             </div>
           )}
 
