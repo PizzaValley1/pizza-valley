@@ -1,0 +1,76 @@
+cat > /mnt/user-data/outputs/AppDownload.css << 'EOF'
+.dl-overlay {
+  position: fixed; inset: 0; z-index: 4000;
+  background: rgba(0,0,0,0.85); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.dl-modal {
+  background: #1a1a1a; border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px; width: 100%; max-width: 700px;
+  max-height: 90vh; display: flex; flex-direction: column;
+  font-family: 'Poppins', sans-serif; overflow: hidden;
+}
+.dl-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 20px 24px 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.dl-header h2 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.dl-header p  { font-size: 13px; color: #888; }
+.dl-close {
+  background: rgba(255,255,255,0.08); border: none; color: #fff;
+  width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+  font-size: 14px; flex-shrink: 0;
+}
+.dl-close:hover { background: #ef4444; }
+.dl-body { overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+.dl-card {
+  background: #242424; border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px; padding: 20px;
+}
+.dl-android { border-left: 3px solid #3ddc84; }
+.dl-ios     { border-left: 3px solid #007aff; }
+.dl-desktop { border-left: 3px solid #ff6b35; }
+.dl-web     { border-left: 3px solid #10b981; }
+.dl-card-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+}
+.dl-platform-icon {
+  font-size: 28px; width: 48px; height: 48px; border-radius: 12px;
+  background: rgba(255,255,255,0.06); display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+}
+.dl-card-header h3 { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+.dl-card-header span { font-size: 12px; color: #888; }
+.dl-badge {
+  margin-left: auto; background: rgba(16,185,129,0.15); color: #10b981;
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+}
+.dl-qr-section { display: flex; gap: 20px; align-items: flex-start; }
+.dl-qr-box {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  flex-shrink: 0;
+}
+.dl-qr-img {
+  width: 120px; height: 120px; border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.1);
+}
+.dl-qr-box span { font-size: 11px; color: #888; }
+.dl-dl-options { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.dl-features { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.dl-features div { font-size: 12px; color: #888; }
+.dl-btn {
+  display: flex; align-items: center; gap: 10px; padding: 11px 16px;
+  border-radius: 12px; font-size: 13px; font-weight: 600;
+  cursor: pointer; text-decoration: none; transition: all 0.2s;
+  font-family: 'Poppins', sans-serif; border: none;
+}
+.dl-btn-green  { background: rgba(61,220,132,0.15); color: #3ddc84; border: 1px solid rgba(61,220,132,0.3); }
+.dl-btn-blue   { background: rgba(0,122,255,0.15);  color: #007aff; border: 1px solid rgba(0,122,255,0.3); }
+.dl-btn-dark   { background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.1); }
+.dl-btn-orange { background: #ff6b35; color: #fff; justify-content: center; }
+.dl-btn:hover  { opacity: 0.85; transform: translateY(-1px); }
+.dl-desktop-btns { display: flex; flex-direction: column; gap: 10px; }
+@media (max-width: 480px) {
+  .dl-qr-section { flex-direction: column; }
+  .dl-qr-img { width: 100px; height: 100px; }
+}

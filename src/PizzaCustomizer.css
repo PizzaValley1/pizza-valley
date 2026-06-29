@@ -1,0 +1,274 @@
+cat > /mnt/user-data/outputs/PizzaCustomizer.css << 'EOF'
+.pc-overlay {
+  position: fixed; inset: 0; z-index: 4000;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.pc-modal {
+  background: #1a1a1a;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px;
+  width: 100%; max-width: 640px;
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  font-family: 'Poppins', sans-serif;
+  overflow: hidden;
+}
+
+/* HEADER */
+.pc-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.pc-header h2 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.pc-header p  { font-size: 13px; color: #888; }
+.pc-close {
+  background: rgba(255,255,255,0.08); border: none; color: #fff;
+  width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+  font-size: 14px; flex-shrink: 0; margin-left: 12px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.pc-close:hover { background: #ef4444; }
+
+/* BODY */
+.pc-body { overflow-y: auto; padding: 20px 24px; flex: 1; }
+.pc-pizza-img {
+  width: 100%; height: 200px; object-fit: cover;
+  border-radius: 16px; margin-bottom: 20px;
+}
+
+/* SECTIONS */
+.pc-section { margin-bottom: 24px; }
+.pc-section-title {
+  font-size: 14px; font-weight: 600; color: #fff;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.pc-multi-badge {
+  background: rgba(255,107,53,0.15); color: #ff6b35;
+  padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 400;
+}
+
+/* SIZE GRID */
+.pc-size-grid {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 10px;
+}
+.pc-size-btn {
+  background: #242424; border: 1.5px solid rgba(255,255,255,0.08);
+  border-radius: 12px; padding: 12px 8px; cursor: pointer;
+  transition: all 0.2s; text-align: center;
+  display: flex; flex-direction: column; gap: 3px; align-items: center;
+  font-family: 'Poppins', sans-serif;
+}
+.pc-size-btn:hover  { border-color: rgba(255,107,53,0.3); }
+.pc-size-btn.active { border-color: #ff6b35; background: rgba(255,107,53,0.1); }
+.pc-size-inch  { font-size: 18px; font-weight: 700; color: #fff; }
+.pc-size-label { font-size: 12px; font-weight: 600; color: #fff; }
+.pc-size-desc  { font-size: 10px; color: #888; }
+.pc-size-price { font-size: 11px; color: #ff6b35; font-weight: 600; }
+
+/* OPTIONS GRID */
+.pc-options-grid {
+  display: grid; grid-template-columns: repeat(2,1fr); gap: 8px;
+}
+.pc-option-btn {
+  background: #242424; border: 1.5px solid rgba(255,255,255,0.08);
+  border-radius: 12px; padding: 12px; cursor: pointer;
+  transition: all 0.2s; text-align: left;
+  display: flex; flex-direction: column; gap: 3px;
+  font-family: 'Poppins', sans-serif;
+}
+.pc-option-btn:hover  { border-color: rgba(255,107,53,0.3); }
+.pc-option-btn.active { border-color: #ff6b35; background: rgba(255,107,53,0.08); }
+.pc-opt-icon  { font-size: 20px; }
+.pc-opt-label { font-size: 13px; font-weight: 500; color: #fff; }
+.pc-opt-desc  { font-size: 11px; color: #888; }
+.pc-opt-price { font-size: 11px; color: #10b981; font-weight: 600; }
+
+/* TOPPINGS */
+.pc-toppings-grid {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 8px;
+}
+.pc-topping-btn {
+  background: #242424; border: 1.5px solid rgba(255,255,255,0.08);
+  border-radius: 12px; padding: 10px 8px; cursor: pointer;
+  transition: all 0.2s; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  font-size: 12px; color: #aaa; position: relative;
+  font-family: 'Poppins', sans-serif;
+}
+.pc-topping-btn:hover  { border-color: rgba(255,107,53,0.3); }
+.pc-topping-btn.active { border-color: #ff6b35; background: rgba(255,107,53,0.1); color: #fff; }
+.pc-top-price { font-size: 10px; color: #10b981; }
+.pc-top-check {
+  position: absolute; top: -6px; right: -6px;
+  background: #ff6b35; color: #fff; width: 18px; height: 18px;
+  border-radius: 50%; font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* SPICE */
+.pc-spice-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.pc-spice-btn {
+  background: #242424; border: 1.5px solid rgba(255,255,255,0.08);
+  border-radius: 20px; padding: 8px 16px; cursor: pointer;
+  font-size: 13px; color: #aaa; transition: all 0.2s;
+  font-family: 'Poppins', sans-serif; font-weight: 500;
+}
+.pc-spice-btn:hover { border-color: rgba(255,107,53,0.3); }
+
+/* NOTES */
+.pc-notes {
+  width: 100%; background: #242424;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px; padding: 12px 16px;
+  font-size: 13px; color: #fff; outline: none;
+  font-family: 'Poppins', sans-serif; resize: none;
+  transition: border 0.2s;
+}
+.pc-notes:focus { border-color: #ff6b35; }
+.pc-notes::placeholder { color: #555; }
+
+/* QUANTITY */
+.pc-qty-row { display: flex; align-items: center; gap: 16px; }
+.pc-qty-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,255,255,0.08); border: none; color: #fff;
+  font-size: 20px; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.pc-qty-btn:hover { background: #ff6b35; }
+.pc-qty-num { font-size: 20px; font-weight: 700; color: #fff; min-width: 30px; text-align: center; }
+
+/* FOOTER */
+.pc-footer {
+  padding: 16px 24px 20px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: #111; flex-shrink: 0;
+}
+.pc-price-breakdown { margin-bottom: 10px; }
+.pc-price-row {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: #888; padding: 3px 0;
+}
+.pc-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.08); margin-bottom: 12px;
+  font-size: 14px; color: #fff;
+}
+.pc-total-row strong { font-size: 22px; color: #ff6b35; }
+.pc-add-btn {
+  width: 100%; background: #ff6b35; color: #fff; border: none;
+  padding: 14px; border-radius: 30px; font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: all 0.3s; font-family: 'Poppins', sans-serif;
+  box-shadow: 0 6px 20px rgba(255,107,53,0.35);
+}
+.pc-add-btn:hover { background: #e55a25; transform: translateY(-1px); }
+
+/* RESPONSIVE */
+@media (max-width: 480px) {
+  .pc-size-grid    { grid-template-columns: repeat(2,1fr); }
+  .pc-toppings-grid{ grid-template-columns: repeat(2,1fr); }
+  .pc-options-grid { grid-template-columns: 1fr; }
+  .pc-modal        { max-height: 95vh; }
+  .pc-header, .pc-body, .pc-footer { padding-left: 16px; padding-right: 16px; }
+}
+EOF
+echo "PizzaCustomizer.css done"
+Output
+
+PizzaCustomizer.css done
+Done
+Now create the App Download page with QR codes:
+
+
+Ran 2 commands
+Ran 2 commands
+
+Create AppDownload.js with QR codes
+
+Script
+
+Create AppDownload.css
+bash
+
+cat > /mnt/user-data/outputs/AppDownload.css << 'EOF'
+.dl-overlay {
+  position: fixed; inset: 0; z-index: 4000;
+  background: rgba(0,0,0,0.85); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.dl-modal {
+  background: #1a1a1a; border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px; width: 100%; max-width: 700px;
+  max-height: 90vh; display: flex; flex-direction: column;
+  font-family: 'Poppins', sans-serif; overflow: hidden;
+}
+.dl-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 20px 24px 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.dl-header h2 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.dl-header p  { font-size: 13px; color: #888; }
+.dl-close {
+  background: rgba(255,255,255,0.08); border: none; color: #fff;
+  width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+  font-size: 14px; flex-shrink: 0;
+}
+.dl-close:hover { background: #ef4444; }
+.dl-body { overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+.dl-card {
+  background: #242424; border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px; padding: 20px;
+}
+.dl-android { border-left: 3px solid #3ddc84; }
+.dl-ios     { border-left: 3px solid #007aff; }
+.dl-desktop { border-left: 3px solid #ff6b35; }
+.dl-web     { border-left: 3px solid #10b981; }
+.dl-card-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+}
+.dl-platform-icon {
+  font-size: 28px; width: 48px; height: 48px; border-radius: 12px;
+  background: rgba(255,255,255,0.06); display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+}
+.dl-card-header h3 { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+.dl-card-header span { font-size: 12px; color: #888; }
+.dl-badge {
+  margin-left: auto; background: rgba(16,185,129,0.15); color: #10b981;
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+}
+.dl-qr-section { display: flex; gap: 20px; align-items: flex-start; }
+.dl-qr-box {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  flex-shrink: 0;
+}
+.dl-qr-img {
+  width: 120px; height: 120px; border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.1);
+}
+.dl-qr-box span { font-size: 11px; color: #888; }
+.dl-dl-options { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.dl-features { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.dl-features div { font-size: 12px; color: #888; }
+.dl-btn {
+  display: flex; align-items: center; gap: 10px; padding: 11px 16px;
+  border-radius: 12px; font-size: 13px; font-weight: 600;
+  cursor: pointer; text-decoration: none; transition: all 0.2s;
+  font-family: 'Poppins', sans-serif; border: none;
+}
+.dl-btn-green  { background: rgba(61,220,132,0.15); color: #3ddc84; border: 1px solid rgba(61,220,132,0.3); }
+.dl-btn-blue   { background: rgba(0,122,255,0.15);  color: #007aff; border: 1px solid rgba(0,122,255,0.3); }
+.dl-btn-dark   { background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,255,255,0.1); }
+.dl-btn-orange { background: #ff6b35; color: #fff; justify-content: center; }
+.dl-btn:hover  { opacity: 0.85; transform: translateY(-1px); }
+.dl-desktop-btns { display: flex; flex-direction: column; gap: 10px; }
+@media (max-width: 480px) {
+  .dl-qr-section { flex-direction: column; }
+  .dl-qr-img { width: 100px; height: 100px; }
+}
