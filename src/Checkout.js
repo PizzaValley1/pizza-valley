@@ -15,7 +15,7 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
   const handle = e => setForm({ ...form, [e.target.name]: e.target.value });
 
   const delivery   = deliveryInfo?.type === 'pickup' ? 0 : (deliveryInfo?.distance > 5 ? 200 : 150);
-  const grandTotal = total + delivery;
+  const grandTotal = total + delivery; // eslint-disable-line no-unused-vars
 
   const handleOrderPlaced = () => {
     if (onOrderPlaced) onOrderPlaced(orderId);
