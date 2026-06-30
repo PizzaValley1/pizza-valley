@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import './Checkout.css';
 import Payment from './Payment';
+import LocationPicker from './LocationPicker';
 
 const STEPS = ['Cart Review', 'Delivery Info', 'Payment', 'Confirmation'];
 
 export default function Checkout({ cart, total, onBack, updateQty, removeFromCart, onOrderPlaced }) {
-  const [step, setStep]         = useState(0);
-  const [form, setForm]         = useState({ name:'', phone:'', address:'', city:'Rawalpindi', notes:'', type:'delivery' });
-  const [orderId]               = useState('PV' + Math.floor(Math.random()*90000+10000));
+  const [step, setStep]           = useState(0);
+  const [form, setForm]           = useState({ name:'', phone:'', notes:'' });
+  const [orderId]                 = useState('PV' + Math.floor(Math.random()*90000+10000));
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [deliveryInfo, setDeliveryInfo] = useState(null); // { type, address, distance, eta } or { type:'pickup' }
 
-  const handle  = e => setForm({ ...form, [e.target.name]: e.target.value });
-  const delivery    = 150;
-  const grandTotal  = total + delivery;
+  const handle = e => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const delivery   = deliveryInfo?.type === 'pickup' ? 0 : (deliveryInfo?.distance > 5 ? 200 : 150);
+  const grandTotal = total + delivery;
 
   const handleOrderPlaced = () => {
     if (onOrderPlaced) onOrderPlaced(orderId);
@@ -20,6 +24,14 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
 
   return (
     <div className="co-page">
+
+      {/* LOCATION PICKER MODAL */}
+      {showLocationPicker && (
+        <LocationPicker
+          onConfirm={(info) => setDeliveryInfo(info)}
+          onClose={() => setShowLocationPicker(false)}
+        />
+      )}
 
       {/* HEADER */}
       <div className="co-header">
@@ -55,7 +67,7 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
                   <div className="co-item" key={item.id}>
                     <img src={item.img} alt={item.name} className="co-item-img" />
                     <div className="co-item-info">
-                      <strong>{item.name}</strong>
+                      <strong>{item.displayName || item.name}</strong>
                       <span>Rs. {item.price.toLocaleString()} each</span>
                     </div>
                     <div className="co-item-qty">
@@ -69,8 +81,7 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
                 ))}
                 <div className="co-summary">
                   <div className="co-summary-row"><span>Subtotal</span><span>Rs. {total.toLocaleString()}</span></div>
-                  <div className="co-summary-row"><span>Delivery</span><span>Rs. {delivery}</span></div>
-                  <div className="co-summary-row total"><span>Total</span><strong>Rs. {grandTotal.toLocaleString()}</strong></div>
+                  <div className="co-summary-row total"><span>Total</span><strong>Rs. {total.toLocaleString()}</strong></div>
                 </div>
                 <button className="co-btn" onClick={() => setStep(1)}>Continue to Delivery →</button>
               </>
@@ -82,6 +93,7 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
         {step === 1 && (
           <div className="co-section">
             <h2>Delivery Information</h2>
+
             <div className="co-form">
               <div className="co-field">
                 <label>Full Name</label>
@@ -91,34 +103,48 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
                 <label>Phone Number</label>
                 <input name="phone" value={form.phone} onChange={handle} placeholder="03XX-XXXXXXX" />
               </div>
+
+              {/* LOCATION SELECTOR */}
               <div className="co-field">
-                <label>Delivery Address</label>
-                <input name="address" value={form.address} onChange={handle} placeholder="Street, Area, Landmark" />
+                <label>Delivery Location</label>
+                {deliveryInfo ? (
+                  <div className="co-location-confirmed" onClick={() => setShowLocationPicker(true)}>
+                    {deliveryInfo.type === 'pickup' ? (
+                      <>
+                        <span className="co-loc-icon">🏪</span>
+                        <div>
+                          <strong>Self Pickup</strong>
+                          <span>Pizza Valley - Saddar Branch</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <span className="co-loc-icon">📍</span>
+                        <div>
+                          <strong>{deliveryInfo.distance} km away · {deliveryInfo.eta} min</strong>
+                          <span>{deliveryInfo.address?.slice(0, 60)}...</span>
+                        </div>
+                      </>
+                    )}
+                    <span className="co-loc-edit">Edit →</span>
+                  </div>
+                ) : (
+                  <button className="co-location-btn" onClick={() => setShowLocationPicker(true)}>
+                    📍 Set Delivery Location / Pickup
+                  </button>
+                )}
               </div>
-              <div className="co-field">
-                <label>City</label>
-                <select name="city" value={form.city} onChange={handle}>
-                  <option>Rawalpindi</option>
-                  <option>Islamabad</option>
-                  <option>Bahria Town</option>
-                </select>
-              </div>
+
               <div className="co-field">
                 <label>Order Notes (optional)</label>
                 <textarea name="notes" value={form.notes} onChange={handle}
                   placeholder="Extra cheese, no onions..." rows={3} />
               </div>
-              <div className="co-type-row">
-                <button className={`co-type-btn ${form.type !== 'pickup' ? 'active' : ''}`}
-                  onClick={() => setForm({...form, type:'delivery'})}>🚴 Delivery</button>
-                <button className={`co-type-btn ${form.type === 'pickup' ? 'active' : ''}`}
-                  onClick={() => setForm({...form, type:'pickup'})}>🏪 Self Pickup</button>
-              </div>
             </div>
             <div className="co-nav-btns">
               <button className="co-btn-outline" onClick={() => setStep(0)}>← Back</button>
               <button className="co-btn" onClick={() => setStep(2)}
-                disabled={!form.name || !form.phone || !form.address}>
+                disabled={!form.name || !form.phone || !deliveryInfo}>
                 Continue to Payment →
               </button>
             </div>
@@ -128,7 +154,7 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
         {/* STEP 2 — PAYMENT */}
         {step === 2 && (
           <Payment
-            total={total}
+            total={total + delivery}
             onBack={() => setStep(1)}
             onPaid={handleOrderPlaced}
           />
@@ -147,7 +173,7 @@ export default function Checkout({ cart, total, onBack, updateQty, removeFromCar
               <div className="co-track-step">🚴 Out for delivery</div>
               <div className="co-track-step">✅ Delivered</div>
             </div>
-            <p className="co-eta">⏱ Estimated delivery: <strong>25–35 minutes</strong></p>
+            <p className="co-eta">⏱ Estimated: <strong>{deliveryInfo?.eta || 30} minutes</strong></p>
             <button className="co-btn" onClick={onBack}>Back to Menu</button>
           </div>
         )}

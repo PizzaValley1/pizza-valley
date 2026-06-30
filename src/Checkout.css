@@ -143,3 +143,37 @@
   .co-item { flex-wrap:wrap; }
   .co-nav-btns { flex-direction:column; }
 }
+
+/* LOCATION PICKER BUTTON */
+.co-location-btn {
+  width: 100%;
+  background: rgba(255,107,53,0.1);
+  border: 1.5px dashed rgba(255,107,53,0.4);
+  color: #ff6b35;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.2s;
+}
+.co-location-btn:hover { background: rgba(255,107,53,0.15); }
+
+.co-location-confirmed {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #1a1a1a;
+  border: 1.5px solid rgba(16,185,129,0.3);
+  border-radius: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.co-location-confirmed:hover { border-color: #10b981; }
+.co-loc-icon { font-size: 24px; flex-shrink: 0; }
+.co-location-confirmed > div { flex: 1; }
+.co-location-confirmed strong { display: block; font-size: 13px; color: #fff; margin-bottom: 2px; }
+.co-location-confirmed span { font-size: 11px; color: #888; }
+.co-loc-edit { font-size: 12px; color: #ff6b35; flex-shrink: 0; }
