@@ -1,4 +1,3 @@
-cat > /mnt/user-data/outputs/OrderPin.js << 'EOF'
 import React, { useState, useEffect } from 'react';
 import './OrderPin.css';
 
