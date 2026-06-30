@@ -1,3 +1,4 @@
+cat > /mnt/user-data/outputs/App.js << 'APPEOF'
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import Login from './Login';
@@ -5,6 +6,9 @@ import Register from './Register';
 import Checkout from './Checkout';
 import AdminDashboard from './AdminDashboard';
 import OrderTracking from './OrderTracking';
+import PizzaCustomizer from './PizzaCustomizer';
+import AppDownload from './AppDownload';
+import OrderPin from './OrderPin';
 
 const menuItems = [
   { id:1, category:'Classic', badge:'Bestseller', name:'Margherita Classic',
@@ -58,7 +62,10 @@ export default function App() {
   const [page, setPage]           = useState('home');
   const [isAdmin, setIsAdmin]     = useState(false);
   const [showTracking, setShowTracking] = useState(false);
-  const [, setCurrentOrderId]     = useState('');
+  const [currentOrderId, setCurrentOrderId] = useState('');
+  const [customizingItem, setCustomizingItem] = useState(null); // pizza being customized
+  const [showDownload, setShowDownload]   = useState(false);    // app download modal
+  const [showPin, setShowPin]             = useState(false);    // delivery PIN modal
 
   const filtered  = activeCategory === 'All' ? menuItems : menuItems.filter(i => i.category === activeCategory);
   const cartCount = cart.reduce((a, b) => a + b.qty, 0);
@@ -70,7 +77,7 @@ export default function App() {
       if (exists) return prev.map(c => c.id === item.id ? { ...c, qty: c.qty + 1 } : c);
       return [...prev, { ...item, qty: 1 }];
     });
-    setToast(`✅ ${item.name} added to cart!`);
+    setToast(`✅ ${item.displayName || item.name} added to cart!`);
     setTimeout(() => setToast(''), 2500);
   };
 
@@ -81,7 +88,6 @@ export default function App() {
   };
 
   useEffect(() => {
-    // ── SCROLL TRACKING ──
     const onScroll = () => {
       ['home','menu','deals','contact'].forEach(s => {
         const el = document.getElementById(s);
@@ -90,15 +96,12 @@ export default function App() {
     };
     window.addEventListener('scroll', onScroll);
 
-    // ── SECRET ADMIN SHORTCUT: Ctrl + Shift + A ──
+    // SECRET ADMIN SHORTCUT: Ctrl + Shift + A
     const onKey = (e) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'A') {
         const pass = prompt('🔐 Admin Password:');
-        if (pass === 'softdigicodix2024') {
-          setIsAdmin(true);
-        } else if (pass !== null) {
-          alert('❌ Wrong password!');
-        }
+        if (pass === 'softdigicodix2024') setIsAdmin(true);
+        else if (pass !== null) alert('❌ Wrong password!');
       }
     };
     window.addEventListener('keydown', onKey);
@@ -118,7 +121,22 @@ export default function App() {
   if (isAdmin) return <AdminDashboard onLogout={() => setIsAdmin(false)} />;
 
   // ── ORDER TRACKING PAGE ──
-  if (showTracking) return <OrderTracking orderId="PV10234" onBack={() => setShowTracking(false)} />;
+  if (showTracking) {
+    return (
+      <>
+        <OrderTracking orderId={currentOrderId} onBack={() => setShowTracking(false)} />
+        <button
+          onClick={() => setShowPin(true)}
+          style={{position:'fixed',bottom:20,right:20,zIndex:2500,
+          background:'#ff6b35',color:'#fff',border:'none',padding:'12px 20px',
+          borderRadius:30,cursor:'pointer',fontSize:14,fontWeight:600,
+          boxShadow:'0 6px 20px rgba(255,107,53,0.4)',fontFamily:'Poppins,sans-serif'}}>
+          🔐 View Delivery PIN
+        </button>
+        {showPin && <OrderPin orderId={currentOrderId} onClose={() => setShowPin(false)} />}
+      </>
+    );
+  }
 
   // ── CHECKOUT PAGE ──
   if (page === 'checkout') {
@@ -158,6 +176,20 @@ export default function App() {
         </div>
       )}
 
+      {/* PIZZA CUSTOMIZER MODAL */}
+      {customizingItem && (
+        <PizzaCustomizer
+          item={customizingItem}
+          onAddToCart={addToCart}
+          onClose={() => setCustomizingItem(null)}
+        />
+      )}
+
+      {/* APP DOWNLOAD MODAL */}
+      {showDownload && (
+        <AppDownload onClose={() => setShowDownload(false)} />
+      )}
+
       {/* TOAST */}
       {toast && <div className="pv-toast">{toast}</div>}
 
@@ -181,6 +213,13 @@ export default function App() {
           </ul>
 
           <div className="pv-nav-actions">
+            <button
+              onClick={() => setShowDownload(true)}
+              style={{background:'rgba(255,107,53,0.15)',border:'1px solid rgba(255,107,53,0.3)',
+              color:'#ff6b35',padding:'8px 16px',borderRadius:'20px',cursor:'pointer',
+              fontSize:'13px',fontWeight:600,fontFamily:'Poppins,sans-serif'}}>
+              📱 Get App
+            </button>
             <button className="pv-cart-btn" onClick={() => setCartOpen(true)}>
               🛒 {cartCount > 0 && <span className="pv-cart-count">{cartCount}</span>}
             </button>
@@ -244,7 +283,7 @@ export default function App() {
         <div className="pv-section-header">
           <span className="pv-eyebrow">Our Menu</span>
           <h2>Hand-Crafted Pizzas</h2>
-          <p>Every pizza made fresh to order with premium ingredients</p>
+          <p>Every pizza made fresh to order with premium ingredients — click any pizza to customize!</p>
         </div>
         <div className="pv-categories">
           {categories.map(c => (
@@ -254,7 +293,7 @@ export default function App() {
         </div>
         <div className="pv-menu-grid">
           {filtered.map(item => (
-            <div className="pv-menu-card" key={item.id}>
+            <div className="pv-menu-card" key={item.id} onClick={() => setCustomizingItem(item)} style={{cursor:'pointer'}}>
               {item.badge && <div className="pv-menu-badge">{item.badge}</div>}
               <div className="pv-menu-img">
                 <img src={item.img} alt={item.name} loading="lazy" />
@@ -263,8 +302,10 @@ export default function App() {
                 <h3>{item.name}</h3>
                 <p>{item.desc}</p>
                 <div className="pv-menu-footer">
-                  <span className="pv-price">Rs. {item.price.toLocaleString()}</span>
-                  <button className="pv-add-btn" onClick={() => addToCart(item)}>+ Add</button>
+                  <span className="pv-price">From Rs. {item.price.toLocaleString()}</span>
+                  <button className="pv-add-btn" onClick={(e) => { e.stopPropagation(); setCustomizingItem(item); }}>
+                    Customize →
+                  </button>
                 </div>
               </div>
             </div>
@@ -366,7 +407,8 @@ export default function App() {
           </div>
           <div className="pv-footer-links">
             <h4>Order Via</h4>
-            <p>🌐 Website</p><p>📱 Android App</p><p>🍎 iOS App</p><p>💻 Desktop App</p>
+            <button onClick={() => setShowDownload(true)}>📱 Download App</button>
+            <p>🌐 Website</p><p>💻 Desktop App</p>
           </div>
           <div className="pv-footer-links">
             <h4>Payment</h4>
@@ -419,8 +461,13 @@ export default function App() {
                     <div className="pv-cart-item" key={item.id}>
                       <img src={item.img} alt={item.name} className="pv-cart-item-img" />
                       <div className="pv-cart-item-info">
-                        <strong>{item.name}</strong>
+                        <strong>{item.displayName || item.name}</strong>
                         <span>Rs. {item.price.toLocaleString()}</span>
+                        {item.customization && (
+                          <div style={{fontSize:10,color:'#666',marginTop:2}}>
+                            {item.customization.crust}, {item.customization.cheese}
+                          </div>
+                        )}
                       </div>
                       <div className="pv-cart-item-qty">
                         <button onClick={() => updateQty(item.id, item.qty - 1)}>−</button>
@@ -446,7 +493,6 @@ export default function App() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
